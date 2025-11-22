@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://turret_scene"]
+
+[ext_resource type="Script" path="res://Turret.cs" id="1_1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 20.0
+
+[node name="Turret" type="Node2D"]
+script = ExtResource("1_1")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(1, 0, 0, 1)
+polygon = PackedVector2Array(20, 0, 18.477, 6.42788, 14.1421, 14.1421, 6.42788, 18.477, 0, 20, -6.42788, 18.477, -14.1421, 14.1421, -18.477, 6.42788, -20, 0, -18.477, -6.42788, -14.1421, -14.1421, -6.42788, -18.477, 0, -20, 6.42788, -18.477, 14.1421, -14.1421, 18.477, -6.42788)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_1")
+
+[node name="Area2D" type="Area2D" parent="."]
+monitoring = true
+monitorable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("CircleShape2D_1")
+

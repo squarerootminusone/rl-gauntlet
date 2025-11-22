@@ -1,0 +1,11 @@
+res://Main.cs
+res://Projectile.cs
+res://Ship.cs
+res://Target.cs
+res://Turret.cs
+res://Ship.tscn
+res://Explosion.cs
+res://Explosion.tscn
+res://Turret.tscn
+res://Targetable.cs
+res://TargetableCharacter.cs

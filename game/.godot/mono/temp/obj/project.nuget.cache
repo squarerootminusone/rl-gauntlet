@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "NN0Wcq8VIyI=",
+  "success": true,
+  "projectFilePath": "/Users/paulmist/Documents/source/rl-gauntlet/game/game.csproj",
+  "expectedPackageFiles": [
+    "/Users/paulmist/.nuget/packages/godot.sourcegenerators/4.5.0/godot.sourcegenerators.4.5.0.nupkg.sha512",
+    "/Users/paulmist/.nuget/packages/godotsharp/4.5.0/godotsharp.4.5.0.nupkg.sha512",
+    "/Users/paulmist/.nuget/packages/godotsharpeditor/4.5.0/godotsharpeditor.4.5.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,11 @@
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.csproj.AssemblyReference.cache
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.GeneratedMSBuildEditorConfig.editorconfig
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.csproj.CoreCompileInputs.cache
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.sourcelink.json
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/bin/Debug/game.deps.json
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/bin/Debug/game.dll
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/bin/Debug/game.pdb
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.dll
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/refint/game.dll
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/game.pdb
+/Users/paulmist/Documents/source/rl-gauntlet/game/.godot/mono/temp/obj/Debug/ref/game.dll

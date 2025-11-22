@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://ship_scene"]
+
+[ext_resource type="Script" path="res://Ship.cs" id="1_1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(30, 20)
+
+[sub_resource type="ConvexPolygonShape2D" id="ConvexPolygonShape2D_1"]
+points = PackedVector2Array(20, 0, -10, -12, -10, 12)
+
+[node name="Ship" type="CharacterBody2D"]
+script = ExtResource("1_1")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(1, 0, 0, 1)
+polygon = PackedVector2Array(20, 0, -10, -12, -10, 12)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="Area2D" type="Area2D" parent="."]
+monitoring = true
+monitorable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_1")
+
