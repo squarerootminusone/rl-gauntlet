@@ -1,5 +1,4 @@
 using Godot;
-using System.Collections.Generic;
 
 namespace game;
 
@@ -15,10 +14,7 @@ public partial class Turret : Targetable
 	
 	public override void _Ready()
 	{
-		// Set MaxHP before calling base._Ready() so HP is initialized correctly
-		// Don't override Team here - it should be set before _Ready() is called
-		if (MaxHP == 0) // Only set default if not already set
-			MaxHP = 5;
+		MaxHP = 5;
 		base._Ready(); // This will call UpdateColor() automatically
 		
 		// Create detection area

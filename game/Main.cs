@@ -22,13 +22,28 @@ public partial class Main : Node2D
     [Export] public float MinZoom { get; set; } = 0.5f;
     [Export] public float MaxZoom { get; set; } = 3.0f;
     
+    // Team crystal tracking
+    private Dictionary<Team, int> _teamCrystals = new Dictionary<Team, int>();
+    private CanvasLayer _uiLayer;
+    private Control _uiContainer;
+    private Dictionary<Team, Label> _crystalLabels = new Dictionary<Team, Label>();
+    
     public override void _Ready()
     {
         Instance = this;
         
+        // Initialize team crystal counts
+        _teamCrystals[Team.Red] = 0;
+        _teamCrystals[Team.Blue] = 0;
+        _teamCrystals[Team.Green] = 0;
+        _teamCrystals[Team.Yellow] = 0;
+        
         // Create camera
         _camera = new Camera2D();
         AddChild(_camera);
+        
+        // Create UI for crystal display
+        SetupUI();
         
         // Collect ships from scene
         CollectShips();
@@ -43,45 +58,6 @@ public partial class Main : Node2D
         }
     }
     
-    public override void _Process(double delta)
-    {
-        // Clean up destroyed ships from the list
-        CleanupDestroyedShips();
-        
-        // Handle ship selection with number keys
-        if (Input.IsKeyPressed(Key.Key1) && _ships.Count >= 1)
-            SelectShip(0);
-        else if (Input.IsKeyPressed(Key.Key2) && _ships.Count >= 2)
-            SelectShip(1);
-        else if (Input.IsKeyPressed(Key.Key3) && _ships.Count >= 3)
-            SelectShip(2);
-        else if (Input.IsKeyPressed(Key.Key4) && _ships.Count >= 4)
-            SelectShip(3);
-        
-        // Handle camera movement with WASD
-        if (_camera != null)
-        {
-            var cameraDir = Vector2.Zero;
-            if (Input.IsKeyPressed(Key.W))
-                cameraDir.Y -= 1;
-            if (Input.IsKeyPressed(Key.S))
-                cameraDir.Y += 1;
-            if (Input.IsKeyPressed(Key.A))
-                cameraDir.X -= 1;
-            if (Input.IsKeyPressed(Key.D))
-                cameraDir.X += 1;
-            
-            cameraDir = cameraDir.Normalized();
-            _camera.GlobalPosition += cameraDir * CameraSpeed * (float)delta;
-        }
-        
-        // Handle right-click to set ship target
-        if (Input.IsMouseButtonPressed(MouseButton.Right) && _currentShip != null && IsInstanceValid(_currentShip))
-        {
-            var mousePos = GetGlobalMousePosition();
-            _currentShip.SetTargetPosition(mousePos);
-        }
-    }
     
     public override void _Input(InputEvent @event)
     {
@@ -202,6 +178,103 @@ public partial class Main : Node2D
         {
             AddChild(explosion);
             explosion.GlobalPosition = position;
+        }
+    }
+    
+    public void AddCrystalsToTeam(Team team, int amount)
+    {
+        if (_teamCrystals.ContainsKey(team))
+        {
+            _teamCrystals[team] += amount;
+            UpdateCrystalDisplay();
+        }
+    }
+    
+    private void SetupUI()
+    {
+        // Create UI layer and container
+        _uiLayer = new CanvasLayer();
+        AddChild(_uiLayer);
+        
+        _uiContainer = new Control();
+        _uiLayer.AddChild(_uiContainer);
+        
+        // Create labels for each team's crystal count
+        var yOffset = 20.0f;
+        var labelHeight = 30.0f;
+        
+        foreach (Team team in System.Enum.GetValues(typeof(Team)))
+        {
+            var label = new Label();
+            label.Text = $"{team}: 0 crystals";
+            label.Position = new Vector2(GetViewport().GetVisibleRect().Size.X - 200, yOffset);
+            label.AddThemeColorOverride("font_color", TeamColors.GetColor(team));
+            _uiContainer.AddChild(label);
+            _crystalLabels[team] = label;
+            yOffset += labelHeight;
+        }
+    }
+    
+    private void UpdateCrystalDisplay()
+    {
+        foreach (var kvp in _crystalLabels)
+        {
+            var team = kvp.Key;
+            var label = kvp.Value;
+            var count = _teamCrystals.ContainsKey(team) ? _teamCrystals[team] : 0;
+            label.Text = $"{team}: {count} crystals";
+        }
+    }
+    
+    public override void _Process(double delta)
+    {
+        // Update UI position in case viewport size changed
+        if (_uiContainer != null)
+        {
+            var viewportSize = GetViewport().GetVisibleRect().Size;
+            foreach (var kvp in _crystalLabels)
+            {
+                var label = kvp.Value;
+                var index = (int)kvp.Key;
+                label.Position = new Vector2(viewportSize.X - 200, 20 + index * 30);
+            }
+        }
+        
+        // Clean up destroyed ships from the list
+        CleanupDestroyedShips();
+        
+        // Handle ship selection with number keys
+        if (Input.IsKeyPressed(Key.Key1) && _ships.Count >= 1)
+            SelectShip(0);
+        else if (Input.IsKeyPressed(Key.Key2) && _ships.Count >= 2)
+            SelectShip(1);
+        else if (Input.IsKeyPressed(Key.Key3) && _ships.Count >= 3)
+            SelectShip(2);
+        else if (Input.IsKeyPressed(Key.Key4) && _ships.Count >= 4)
+            SelectShip(3);
+        
+        // Handle camera movement with WASD
+        if (_camera != null)
+        {
+            var cameraDir = Vector2.Zero;
+            if (Input.IsKeyPressed(Key.W))
+                cameraDir.Y -= 1;
+            if (Input.IsKeyPressed(Key.S))
+                cameraDir.Y += 1;
+            if (Input.IsKeyPressed(Key.A))
+                cameraDir.X -= 1;
+            if (Input.IsKeyPressed(Key.D))
+                cameraDir.X += 1;
+            
+            cameraDir = cameraDir.Normalized();
+            _camera.GlobalPosition += cameraDir * CameraSpeed * (float)delta;
+        }
+        
+        // Handle right-click to set ship target
+        if (Input.IsMouseButtonPressed(MouseButton.Right) && _currentShip != null && IsInstanceValid(_currentShip))
+        {
+            var mousePos = GetGlobalMousePosition();
+            _currentShip.SetTargetPosition(mousePos);
         }
     }
 }

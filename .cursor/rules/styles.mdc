@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+In C# code keep opening curly braces in the same line as the statement that opens the scope.

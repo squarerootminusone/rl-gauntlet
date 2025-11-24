@@ -4,10 +4,10 @@ namespace game;
 
 public partial class Projectile : Area2D
 {
-    [Export] public float Speed { get; set; } = 500.0f;
+    [Export] public float Speed { get; set; } = 700.0f;
     [Export] public Team Team { get; set; } = Team.Red;
     [Export] public Vector2 Direction { get; set; } = Vector2.Right;
-    [Export] public float MaxRange { get; set; } = 600.0f; // Maximum distance projectile can travel
+    [Export] public float MaxRange { get; set; } = 700.0f; // Maximum distance projectile can travel
     
     private Vector2 _startPosition;
     private bool _startPositionSet = false;
