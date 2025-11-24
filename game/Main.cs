@@ -30,14 +30,11 @@ public partial class Main : Node2D
         _camera = new Camera2D();
         AddChild(_camera);
         
-        // Create ships
-        CreateShips();
+        // Collect ships from scene
+        CollectShips();
         
-        // Create targets
-        CreateTargets();
-        
-        // Create turrets
-        CreateTurrets();
+        // Ensure ProjectileScene is set on all ships and turrets from scene
+        SetupSceneEntities();
         
         // Select first ship by default
         if (_ships.Count > 0)
@@ -48,6 +45,9 @@ public partial class Main : Node2D
     
     public override void _Process(double delta)
     {
+        // Clean up destroyed ships from the list
+        CleanupDestroyedShips();
+        
         // Handle ship selection with number keys
         if (Input.IsKeyPressed(Key.Key1) && _ships.Count >= 1)
             SelectShip(0);
@@ -76,7 +76,7 @@ public partial class Main : Node2D
         }
         
         // Handle right-click to set ship target
-        if (Input.IsMouseButtonPressed(MouseButton.Right) && _currentShip != null)
+        if (Input.IsMouseButtonPressed(MouseButton.Right) && _currentShip != null && IsInstanceValid(_currentShip))
         {
             var mousePos = GetGlobalMousePosition();
             _currentShip.SetTargetPosition(mousePos);
@@ -112,132 +112,83 @@ public partial class Main : Node2D
     {
         if (index < 0 || index >= _ships.Count)
             return;
+        
+        var ship = _ships[index];
+        
+        // Check if ship is still valid
+        if (!IsInstanceValid(ship))
+        {
+            CleanupDestroyedShips();
+            return;
+        }
             
         // Deselect current ship
-        if (_currentShip != null)
+        if (_currentShip != null && IsInstanceValid(_currentShip))
         {
             _currentShip.IsControlled = false;
         }
         
         // Select new ship
         _selectedShipIndex = index;
-        _currentShip = _ships[index];
+        _currentShip = ship;
         _currentShip.IsControlled = true;
         
         // Center camera on new ship
-        if (_camera != null)
+        if (_camera != null && IsInstanceValid(_currentShip))
         {
             _camera.GlobalPosition = _currentShip.GlobalPosition;
         }
     }
     
-    private void CreateShips()
+    private void CleanupDestroyedShips()
     {
-        if (ShipScene == null)
-            return;
-            
-        var viewportSize = GetViewport().GetVisibleRect().Size;
-        var centerY = viewportSize.Y / 2;
-        
-        // Create one red ship
-        var redShip = ShipScene.Instantiate<Ship>();
-        if (redShip != null)
+        // Remove destroyed ships from the list
+        for (int i = _ships.Count - 1; i >= 0; i--)
         {
-            redShip.Team = Team.Red;
-            redShip.MaxHP = 3;
-            redShip.ProjectileScene = ProjectileScene;
-            redShip.GlobalPosition = new Vector2(200, centerY - 100);
-            AddChild(redShip); // UpdateColor() is called automatically in _Ready()
-            _ships.Add(redShip);
+            if (!IsInstanceValid(_ships[i]))
+            {
+                // If the destroyed ship was the current ship, clear it
+                if (_currentShip == _ships[i])
+                {
+                    _currentShip = null;
+                }
+                _ships.RemoveAt(i);
+            }
         }
         
-        // Create one blue ship
-        var blueShip = ShipScene.Instantiate<Ship>();
-        if (blueShip != null)
+        // If current ship is invalid, try to select the first available ship
+        if ((_currentShip == null || !IsInstanceValid(_currentShip)) && _ships.Count > 0)
         {
-            blueShip.Team = Team.Blue;
-            blueShip.MaxHP = 3;
-            blueShip.ProjectileScene = ProjectileScene;
-            blueShip.GlobalPosition = new Vector2(200, centerY + 100);
-            AddChild(blueShip); // UpdateColor() is called automatically in _Ready()
-            _ships.Add(blueShip);
+            SelectShip(0);
         }
     }
     
-    private void CreateTargets()
+    private void CollectShips()
     {
-        if (TargetScene == null)
-            return;
-            
-        var viewportSize = GetViewport().GetVisibleRect().Size;
-        var centerY = viewportSize.Y / 2;
-        
-        // Create a couple of targets
-        // Red target
-        var redTarget = TargetScene.Instantiate<Target>();
-        if (redTarget != null)
+        // Find all Ship nodes in the scene tree
+        foreach (var child in GetChildren())
         {
-            redTarget.Team = Team.Red;
-            redTarget.GlobalPosition = new Vector2(viewportSize.X - 300, centerY - 150);
-            AddChild(redTarget); // UpdateColor() is called automatically in _Ready()
-        }
-        
-        // Blue target
-        var blueTarget = TargetScene.Instantiate<Target>();
-        if (blueTarget != null)
-        {
-            blueTarget.Team = Team.Blue;
-            blueTarget.GlobalPosition = new Vector2(viewportSize.X - 300, centerY + 150);
-            AddChild(blueTarget); // UpdateColor() is called automatically in _Ready()
-        }
-        
-        // Add a couple more targets for variety
-        var greenTarget = TargetScene.Instantiate<Target>();
-        if (greenTarget != null)
-        {
-            greenTarget.Team = Team.Green;
-            greenTarget.GlobalPosition = new Vector2(viewportSize.X - 200, centerY);
-            AddChild(greenTarget); // UpdateColor() is called automatically in _Ready()
-        }
-        
-        var yellowTarget = TargetScene.Instantiate<Target>();
-        if (yellowTarget != null)
-        {
-            yellowTarget.Team = Team.Yellow;
-            yellowTarget.GlobalPosition = new Vector2(viewportSize.X - 400, centerY);
-            AddChild(yellowTarget); // UpdateColor() is called automatically in _Ready()
+            if (child is Ship ship)
+            {
+                _ships.Add(ship);
+            }
         }
     }
     
-    private void CreateTurrets()
+    private void SetupSceneEntities()
     {
-        if (TurretScene == null)
-            return;
-            
-        var viewportSize = GetViewport().GetVisibleRect().Size;
-        var centerY = viewportSize.Y / 2;
-        var centerX = viewportSize.X / 2;
-        
-        // Create a red turret
-        var redTurret = TurretScene.Instantiate<Turret>();
-        if (redTurret != null)
+        // Ensure ProjectileScene is set on all ships and turrets
+        // (in case they weren't set in the scene file)
+        foreach (var child in GetChildren())
         {
-            redTurret.Team = Team.Red;
-            redTurret.MaxHP = 5;
-            redTurret.ProjectileScene = ProjectileScene;
-            redTurret.GlobalPosition = new Vector2(centerX - 200, centerY - 200);
-            AddChild(redTurret); // UpdateColor() is called automatically in _Ready()
-        }
-        
-        // Create a blue turret
-        var blueTurret = TurretScene.Instantiate<Turret>();
-        if (blueTurret != null)
-        {
-            blueTurret.Team = Team.Blue;
-            blueTurret.MaxHP = 5;
-            blueTurret.ProjectileScene = ProjectileScene;
-            blueTurret.GlobalPosition = new Vector2(centerX + 200, centerY + 200);
-            AddChild(blueTurret); // UpdateColor() is called automatically in _Ready()
+            if (child is Ship ship && ship.ProjectileScene == null)
+            {
+                ship.ProjectileScene = ProjectileScene;
+            }
+            else if (child is Turret turret && turret.ProjectileScene == null)
+            {
+                turret.ProjectileScene = ProjectileScene;
+            }
         }
     }
     

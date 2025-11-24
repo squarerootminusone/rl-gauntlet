@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://explosion_scene"]
+
+[ext_resource type="Script" path="res://src/Explosion.cs" id="1_1"]
+
+[node name="Explosion" type="Node2D"]
+script = ExtResource("1_1")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(0, 0, 0, 1)
+polygon = PackedVector2Array(8, 0, 7.39104, 3.06147, 5.65685, 5.65685, 3.06147, 7.39104, 0, 8, -3.06147, 7.39104, -5.65685, 5.65685, -7.39104, 3.06147, -8, 0, -7.39104, -3.06147, -5.65685, -5.65685, -3.06147, -7.39104, 0, -8, 3.06147, -7.39104, 5.65685, -5.65685, 7.39104, -3.06147)
+

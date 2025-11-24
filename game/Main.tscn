@@ -1,11 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://main_scene"]
+[gd_scene load_steps=12 format=3 uid="uid://main_scene"]
 
 [ext_resource type="Script" path="res://Main.cs" id="1_1"]
-[ext_resource type="PackedScene" uid="uid://ship_scene" path="res://Ship.tscn" id="1_2"]
-[ext_resource type="PackedScene" uid="uid://target_scene" path="res://Target.tscn" id="1_3"]
-[ext_resource type="PackedScene" uid="uid://projectile_scene" path="res://Projectile.tscn" id="1_4"]
-[ext_resource type="PackedScene" uid="uid://turret_scene" path="res://Turret.tscn" id="1_5"]
-[ext_resource type="PackedScene" uid="uid://explosion_scene" path="res://Explosion.tscn" id="1_6"]
+[ext_resource type="PackedScene" uid="uid://ship_scene" path="res://src/entities/Ship.tscn" id="1_2"]
+[ext_resource type="PackedScene" uid="uid://target_scene" path="res://src/entities/Target.tscn" id="1_3"]
+[ext_resource type="PackedScene" uid="uid://projectile_scene" path="res://src/Projectile.tscn" id="1_4"]
+[ext_resource type="PackedScene" uid="uid://turret_scene" path="res://src/entities/Turret.tscn" id="1_5"]
+[ext_resource type="PackedScene" uid="uid://explosion_scene" path="res://src/Explosion.tscn" id="1_6"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_1")
@@ -14,4 +14,44 @@ TargetScene = ExtResource("1_3")
 ProjectileScene = ExtResource("1_4")
 TurretScene = ExtResource("1_5")
 ExplosionScene = ExtResource("1_6")
+
+[node name="RedShip" parent="." instance=ExtResource("1_2")]
+position = Vector2(200, 200)
+Team = 0
+MaxHP = 3
+ProjectileScene = ExtResource("1_4")
+
+[node name="BlueShip" parent="." instance=ExtResource("1_2")]
+position = Vector2(200, 400)
+Team = 1
+MaxHP = 3
+ProjectileScene = ExtResource("1_4")
+
+[node name="RedTarget" parent="." instance=ExtResource("1_3")]
+position = Vector2(1200, 150)
+Team = 0
+
+[node name="BlueTarget" parent="." instance=ExtResource("1_3")]
+position = Vector2(1200, 450)
+Team = 1
+
+[node name="GreenTarget" parent="." instance=ExtResource("1_3")]
+position = Vector2(1300, 300)
+Team = 2
+
+[node name="YellowTarget" parent="." instance=ExtResource("1_3")]
+position = Vector2(1100, 300)
+Team = 3
+
+[node name="RedTurret" parent="." instance=ExtResource("1_5")]
+position = Vector2(640, 100)
+Team = 0
+MaxHP = 5
+ProjectileScene = ExtResource("1_4")
+
+[node name="BlueTurret" parent="." instance=ExtResource("1_5")]
+position = Vector2(960, 500)
+Team = 1
+MaxHP = 5
+ProjectileScene = ExtResource("1_4")
 
