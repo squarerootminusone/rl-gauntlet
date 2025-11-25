@@ -2,11 +2,12 @@ using Godot;
 
 namespace game;
 
-public partial class Turret : Targetable
+public partial class Turret : Targetable, IVisible
 {
-	[Export] public float FireRate { get; set; } = 2.0f; // Shots per second
+	[Export] public float FireRate { get; set; } = 2.3f; // Shots per second
 	[Export] public PackedScene ProjectileScene { get; set; }
 	[Export] public float DetectionRange { get; set; } = 200.0f;
+	[Export] public float VisibilityRange { get; set; } = 700.0f; // Fog of war visibility range
 	
 	private float _timeSinceLastShot = 0.0f;
 	private Ship _currentTarget = null;

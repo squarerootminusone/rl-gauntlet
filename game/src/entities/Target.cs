@@ -2,13 +2,20 @@ using Godot;
 
 namespace game;
 
-public partial class Target : Area2D
+public partial class Target : Area2D, IVisible
 {
     [Export] public Team Team { get; set; } = Team.Blue;
     [Export] public float Size { get; set; } = 50.0f;
     [Export] public int MaxHP { get; set; } = 1;
+    [Export] public float VisibilityRange { get; set; } = 250.0f; // Fog of war visibility range
+    [Export] public int MaxCrystals { get; set; } = 20;
     
     private int _currentHP;
+    private int _crystals = 0;
+    
+    public int Crystals => _crystals;
+    public bool IsSelected { get; set; } = false;
+    public int CurrentHP => _currentHP;
     
     public override void _Ready()
     {
@@ -66,6 +73,27 @@ public partial class Target : Area2D
     private void Die()
     {
         QueueFree();
+    }
+    
+    public bool AddCrystals(int amount)
+    {
+        // Crystals are already counted in team total when mined, so we don't add them again here
+        if (_crystals + amount <= MaxCrystals)
+        {
+            _crystals += amount;
+            return true;
+        }
+        else
+        {
+            // Add as many as possible
+            int spaceAvailable = MaxCrystals - _crystals;
+            if (spaceAvailable > 0)
+            {
+                _crystals = MaxCrystals;
+                return false; // Indicates partial transfer (some crystals couldn't fit)
+            }
+            return false; // No space available
+        }
     }
 }
 

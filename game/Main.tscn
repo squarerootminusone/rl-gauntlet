@@ -16,43 +16,43 @@ ProjectileScene = ExtResource("1_4")
 TurretScene = ExtResource("1_5")
 ExplosionScene = ExtResource("1_6")
 
+[node name="Crystal5" parent="." instance=ExtResource("1_7")]
+position = Vector2(1566, 1032)
+
+[node name="Crystal4" parent="." instance=ExtResource("1_7")]
+position = Vector2(1314, 1046)
+
 [node name="Crystal3" parent="." instance=ExtResource("1_7")]
-position = Vector2(1222, 782)
-
-[node name="Crystal3" parent="Crystal3" instance=ExtResource("1_7")]
-position = Vector2(16, 130)
-
-[node name="Crystal3" parent="Crystal3/Crystal3" instance=ExtResource("1_7")]
-position = Vector2(252, -14)
+position = Vector2(1298, 916)
 
 [node name="Crystal2" parent="." instance=ExtResource("1_7")]
 position = Vector2(910, 476)
 
 [node name="RedShip" parent="." instance=ExtResource("1_2")]
-position = Vector2(1130, 188)
+position = Vector2(1194, 166)
 rotation = -2.4260077
 ProjectileScene = ExtResource("1_4")
 
 [node name="BlueShip" parent="." instance=ExtResource("1_2")]
 position = Vector2(394, 774)
 ProjectileScene = ExtResource("1_4")
-Team = 1
+Team = 2
 
 [node name="RedTarget" parent="." instance=ExtResource("1_3")]
-position = Vector2(1200, 150)
-Team = 0
+position = Vector2(1264, 128)
+Team = 1
 
 [node name="BlueTarget" parent="." instance=ExtResource("1_3")]
 position = Vector2(362, 844)
 
 [node name="RedTurret" parent="." instance=ExtResource("1_5")]
-position = Vector2(1250, 254)
+position = Vector2(1314, 232)
 ProjectileScene = ExtResource("1_4")
 
 [node name="BlueTurret" parent="." instance=ExtResource("1_5")]
 position = Vector2(556, 790)
 ProjectileScene = ExtResource("1_4")
-Team = 1
+Team = 2
 
 [node name="Crystal1" parent="." instance=ExtResource("1_7")]
 position = Vector2(800, 300)

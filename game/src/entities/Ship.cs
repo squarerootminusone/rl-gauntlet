@@ -2,7 +2,7 @@ using Godot;
 
 namespace game;
 
-public partial class Ship : TargetableCharacter
+public partial class Ship : TargetableCharacter, IVisible
 {
 	[Export] public float Speed { get; set; } = 200.0f;
 	[Export] public float FireRate { get; set; } = 2.0f; // Shots per second
@@ -10,9 +10,10 @@ public partial class Ship : TargetableCharacter
 	[Export] public float RotationSpeed { get; set; } = 12.0f; // How fast the ship rotates towards target
 	[Export] public float LaserRange { get; set; } = 300.0f; // Maximum laser range
 	[Export] public float MiningRate { get; set; } = 1.0f; // Crystals per second
+	[Export] public float VisibilityRange { get; set; } = 500.0f; // Fog of war visibility range
 	
 	public bool IsControlled { get; set; } = false;
-	public int Crystals { get; private set; } = 0;
+	public int Crystals { get; set; } = 0; // Changed to set to allow modification
 	public const int MaxCrystals = 5;
 	
 	private float _timeSinceLastShot = 0.0f;
@@ -133,6 +134,9 @@ public partial class Ship : TargetableCharacter
 		{
 			StopLaser();
 		}
+		
+		// Check for nearby targets to deposit crystals
+		CheckForNearbyTargets();
 	}
 	
 	public void SetTargetPosition(Vector2 targetPos)
@@ -305,6 +309,43 @@ public partial class Ship : TargetableCharacter
 		// Called when ship deposits crystals (e.g., at a base)
 		// For now, crystals are automatically added to team when mined
 		Crystals = 0;
+	}
+	
+	private void CheckForNearbyTargets()
+	{
+		if (Crystals == 0)
+			return; // No crystals to deposit
+			
+		const float depositRange = 50.0f;
+		
+		// Find all targets in the scene tree
+		var sceneRoot = GetTree().CurrentScene ?? GetTree().Root;
+		FindNearbyTargetsRecursive(sceneRoot, depositRange);
+	}
+	
+	private void FindNearbyTargetsRecursive(Node node, float depositRange)
+	{
+		// Check if this node is a target of the same team
+		if (node is Target target && target.Team == Team && IsInstanceValid(target))
+		{
+			var distance = GlobalPosition.DistanceTo(target.GlobalPosition);
+			if (distance <= depositRange)
+			{
+				// Transfer all crystals to target
+				int crystalsToTransfer = Crystals;
+				target.AddCrystals(crystalsToTransfer);
+				Crystals = 0;
+				return; // Stop searching after depositing
+			}
+		}
+		
+		// Recursively check children
+		foreach (var child in node.GetChildren())
+		{
+			if (Crystals == 0)
+				return; // Already deposited, stop searching
+			FindNearbyTargetsRecursive(child, depositRange);
+		}
 	}
 	
 }

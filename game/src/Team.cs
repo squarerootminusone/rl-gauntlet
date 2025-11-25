@@ -4,10 +4,9 @@ namespace game;
 
 public enum Team
 {
-    Red = 0,
-    Blue = 1,
-    Green = 2,
-    Yellow = 3
+    Red = 1,
+    Blue = 2,
+    Spectator = 0
 }
 
 public static class TeamColors
@@ -18,8 +17,7 @@ public static class TeamColors
         {
             Team.Red => Colors.Red,
             Team.Blue => Colors.Blue,
-            Team.Green => Colors.Green,
-            Team.Yellow => Colors.Yellow,
+            Team.Spectator => Colors.White,
             _ => Colors.White
         };
     }

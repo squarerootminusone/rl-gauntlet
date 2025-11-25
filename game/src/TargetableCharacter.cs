@@ -11,6 +11,9 @@ public abstract partial class TargetableCharacter : CharacterBody2D
     protected int _currentHP;
     protected Area2D _collisionArea;
     
+    public bool IsSelected { get; set; } = false;
+    public int CurrentHP => _currentHP;
+    
     public override void _Ready()
     {
         _currentHP = MaxHP;

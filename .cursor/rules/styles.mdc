@@ -3,3 +3,14 @@ alwaysApply: true
 ---
 
 In C# code keep opening curly braces in the same line as the statement that opens the scope.
+
+Simplify initialization, for example instead of 
+var panelBg = new ColorRect();
+panelBg.Color = new Color(0, 0, 0, 0.7f); 
+panelBg.Size = new Vector2(250, 100);
+
+Do
+var panelBg = new ColorRect {
+    Color = new Color(0, 0, 0, 0.7f),
+    Size = new Vector2(250, 100)
+};
