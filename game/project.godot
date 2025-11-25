@@ -24,6 +24,10 @@ window/size/viewport_height=1400
 
 project/assembly_name="game"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_rl_agents/plugin.cfg")
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

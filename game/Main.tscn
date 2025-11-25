@@ -1,12 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://dwjadh71gogal"]
+[gd_scene load_steps=9 format=3 uid="uid://dwjadh71gogal"]
 
 [ext_resource type="Script" uid="uid://dihg88lon1hrm" path="res://Main.cs" id="1_1"]
-[ext_resource type="PackedScene" path="res://src/entities/Ship.tscn" id="1_2"]
+[ext_resource type="PackedScene" uid="uid://n1at2tuk5yux" path="res://src/entities/Ship.tscn" id="1_2"]
 [ext_resource type="PackedScene" path="res://src/entities/Target.tscn" id="1_3"]
 [ext_resource type="PackedScene" path="res://src/Projectile.tscn" id="1_4"]
 [ext_resource type="PackedScene" path="res://src/entities/Turret.tscn" id="1_5"]
 [ext_resource type="PackedScene" path="res://src/Explosion.tscn" id="1_6"]
 [ext_resource type="PackedScene" path="res://src/entities/Crystal.tscn" id="1_7"]
+[ext_resource type="Script" uid="uid://7wl26qgxfoy7" path="res://addons/godot_rl_agents/sync.gd" id="8_trn2v"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_1")
@@ -56,3 +57,7 @@ Team = 2
 
 [node name="Crystal1" parent="." instance=ExtResource("1_7")]
 position = Vector2(800, 300)
+
+[node name="Sync" type="Node" parent="."]
+script = ExtResource("8_trn2v")
+metadata/_custom_type_script = "uid://7wl26qgxfoy7"

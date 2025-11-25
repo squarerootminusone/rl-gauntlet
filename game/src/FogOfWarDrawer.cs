@@ -10,7 +10,7 @@ public partial class FogOfWarDrawer : Node2D
     
     private struct VisibilityCircle
     {
-        public Vector2 Position;
+        public Node2D Entity;
         public float Radius;
     }
     
@@ -20,14 +20,14 @@ public partial class FogOfWarDrawer : Node2D
         
         foreach (var entity in visibleEntities)
         {
-            if (!IsInstanceValid(entity as Node2D))
-                continue;
-                
-            _visibilityCircles.Add(new VisibilityCircle
+            if (entity is Node2D node2d && IsInstanceValid(node2d))
             {
-                Position = (entity as Node2D).GlobalPosition,
-                Radius = entity.VisibilityRange
-            });
+                _visibilityCircles.Add(new VisibilityCircle
+                {
+                    Entity = node2d,
+                    Radius = entity.VisibilityRange
+                });
+            }
         }
         
         QueueRedraw();
@@ -45,11 +45,28 @@ public partial class FogOfWarDrawer : Node2D
         // Since we're in world space, positions are already correct
         foreach (var circle in _visibilityCircles)
         {
-            // Convert world position to local position for drawing
-            var localPos = ToLocal(circle.Position);
-            // Draw filled circle in black (visible area)
-            DrawCircle(localPos, circle.Radius, Colors.Black);
+            // Check if the entity is still valid and get current position
+            if (circle.Entity != null && IsInstanceValid(circle.Entity))
+            {
+                // Get current position (in case entity moved)
+                var currentPos = circle.Entity.GlobalPosition;
+                var localPos = ToLocal(currentPos);
+                // Draw filled circle in black (visible area) - use a large number of points for smooth circle
+                DrawCircle(localPos, circle.Radius, Colors.Black);
+            }
         }
+    }
+    
+    public override void _Ready()
+    {
+        // Make sure we're visible and can draw
+        Visible = true;
+    }
+    
+    public override void _Process(double delta)
+    {
+        // Redraw every frame to update positions as entities move
+        QueueRedraw();
     }
 }
 

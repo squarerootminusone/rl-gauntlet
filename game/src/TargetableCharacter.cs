@@ -5,7 +5,7 @@ namespace game;
 // Base class for CharacterBody2D entities that can be targeted and take damage
 public abstract partial class TargetableCharacter : CharacterBody2D
 {
-    [Export] public Team Team { get; set; } = Team.Red;
+    [Export] public TeamType Team { get; set; } = TeamType.Red;
     [Export] public int MaxHP { get; set; } = 1;
     
     protected int _currentHP;

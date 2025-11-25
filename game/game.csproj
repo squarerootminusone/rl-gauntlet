@@ -8,5 +8,8 @@
   <ItemGroup>
     <Compile Include="**/*.cs" Exclude="**/.godot/**" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.2" />
+  </ItemGroup>
 </Project>
 

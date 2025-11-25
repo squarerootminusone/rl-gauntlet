@@ -5,3 +5,7 @@ Gauntlet provides:
 - Matchmaking and global leaderboards
 - A public bot registry with match history 
 - Controls and graphical interface for self-play (rather than just bot-play)
+
+### Installation
+
+For the Godot Plugin - download the [Godot RL Agents](https://github.com/edbeeching/godot_rl_agents/tree/d32518a7a0725b6a3e68ac6cb4ecec26517e18eb) repo and copy `addons/` and `script_templates/` to the `game/` repository.

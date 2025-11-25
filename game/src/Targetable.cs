@@ -5,7 +5,7 @@ namespace game;
 // Base class for entities that can be targeted and take damage
 public partial class Targetable : Node2D
 {
-    [Export] public Team Team { get; set; } = Team.Red;
+    [Export] public TeamType Team { get; set; } = TeamType.Red;
     [Export] public int MaxHP { get; set; } = 1;
     
     protected int _currentHP;

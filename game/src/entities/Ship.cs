@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace game;
@@ -10,7 +11,8 @@ public partial class Ship : TargetableCharacter, IVisible
 	[Export] public float RotationSpeed { get; set; } = 12.0f; // How fast the ship rotates towards target
 	[Export] public float LaserRange { get; set; } = 300.0f; // Maximum laser range
 	[Export] public float MiningRate { get; set; } = 1.0f; // Crystals per second
-	[Export] public float VisibilityRange { get; set; } = 500.0f; // Fog of war visibility range
+	[Export] public float VisibilityRange { get; set; } = 500.0f; // Fog of war visibility rang
+	[Export] public Node3D AIController { get; set; }
 	
 	public bool IsControlled { get; set; } = false;
 	public int Crystals { get; set; } = 0; // Changed to set to allow modification
@@ -19,8 +21,9 @@ public partial class Ship : TargetableCharacter, IVisible
 	private float _timeSinceLastShot = 0.0f;
 	private float _continuousMiningTime = 0.0f; // Time continuously mining the same crystal
 	private float _timeSinceLastBlockSpawn = 0.0f;
+	private bool _requestMine = false;
 	private const float BlockSpawnRate = 0.1f; // Spawn a block every 0.1 seconds while mining
-	private Vector2? _targetPosition = null;
+	public Vector2? _targetPosition { get; set; }
 	private const float ArrivalDistance = 10.0f; // Distance at which ship stops moving towards target
 	private Line2D _laserBeam;
 	private bool _isLaserActive = false;
@@ -32,14 +35,14 @@ public partial class Ship : TargetableCharacter, IVisible
 		MaxHP = 3;
 		base._Ready(); // This will call UpdateColor() automatically
 
-        // Create laser beam visual
-        _laserBeam = new Line2D
-        {
-            Width = 3.0f,
-            DefaultColor = new Color(1.0f, 0.5f, 0.0f, 1.0f), // Bright orange
-            Visible = false
-        };
-        AddChild(_laserBeam);
+		// Create laser beam visual
+		_laserBeam = new Line2D
+		{
+			Width = 3.0f,
+			DefaultColor = new Color(1.0f, 0.5f, 0.0f, 1.0f), // Bright orange
+			Visible = false
+		};
+		AddChild(_laserBeam);
 	}
 	
 	protected override void UpdateColor()
@@ -111,9 +114,9 @@ public partial class Ship : TargetableCharacter, IVisible
 			Shoot();
 			_timeSinceLastShot = 0.0f;
 		}
-		
+
 		// Handle laser mining (only for controlled ship)
-		if (IsControlled && Input.IsKeyPressed(Key.L))
+		if ((IsControlled && Input.IsKeyPressed(Key.L)) || _requestMine)
 		{
 			UpdateLaser();
 			// Update continuous mining time if hitting the same target
@@ -121,7 +124,7 @@ public partial class Ship : TargetableCharacter, IVisible
 			{
 				_continuousMiningTime += (float)delta;
 				_timeSinceLastBlockSpawn += (float)delta;
-				
+
 				// Spawn falling blocks while mining
 				if (_timeSinceLastBlockSpawn >= BlockSpawnRate)
 				{
@@ -134,7 +137,7 @@ public partial class Ship : TargetableCharacter, IVisible
 		{
 			StopLaser();
 		}
-		
+
 		// Check for nearby targets to deposit crystals
 		CheckForNearbyTargets();
 	}
@@ -235,6 +238,10 @@ public partial class Ship : TargetableCharacter, IVisible
 				}
 				else if (hitCrystal.MineCrystal())
 				{
+					// Update RL reward
+					double currentReward = (double)AIController.Get("reward");
+					AIController.Set("reward", currentReward + 10);
+
 					Crystals++;
 					if (Main.Instance != null)
 					{
