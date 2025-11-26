@@ -1,7 +1,7 @@
 extends AIController2D
-class_name PlayerAIController
+class_name ShipAIController
 
-@export var ship: CharacterBody2D
+@export var ship: Node2D
 
 func get_obs() -> Dictionary:
 	return {"obs":[
@@ -25,5 +25,4 @@ func get_action_space() -> Dictionary:
 	}
 	
 func set_action(action) -> void:	
-	ship._targetPosition = Vector2(action["move"][0], action["move"][1])
-	ship._requestMine = true if action["mine"][0] == 0 else false
+	ship.SetTargetPosition(Vector2(action["move"][0] * 2000, action["move"][1]) * 2000)

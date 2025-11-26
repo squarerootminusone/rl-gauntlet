@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://n1at2tuk5yux"]
 
 [ext_resource type="Script" uid="uid://dyow8b5cf87l2" path="res://src/entities/Ship.cs" id="1_1"]
-[ext_resource type="Script" uid="uid://j3m41f8l2i2l" path="res://src/entities/ai_controller_2d.gd" id="2_fv0p2"]
+[ext_resource type="Script" uid="uid://j3m41f8l2i2l" path="res://src/entities/ShipAIController2D.gd" id="2_fv0p2"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(30, 20)
@@ -21,6 +21,7 @@ shape = SubResource("RectangleShape2D_1")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
 shape = SubResource("RectangleShape2D_1")
 
-[node name="AIController2D" type="Node2D" parent="."]
+[node name="ShipAIController2D" type="Node2D" parent="." node_paths=PackedStringArray("ship")]
 script = ExtResource("2_fv0p2")
+ship = NodePath("..")
 metadata/_custom_type_script = "uid://bpjkoxlce7317"
