@@ -29,14 +29,16 @@ position = Vector2(1298, 916)
 [node name="Crystal2" parent="." instance=ExtResource("1_7")]
 position = Vector2(910, 476)
 
-[node name="RedShip" parent="." instance=ExtResource("1_2")]
+[node name="RedShip" parent="." node_paths=PackedStringArray("ShipAIController2D") instance=ExtResource("1_2")]
 position = Vector2(1194, 166)
 rotation = -2.4260077
 ProjectileScene = ExtResource("1_4")
+ShipAIController2D = NodePath("ShipAIController2D")
 
-[node name="BlueShip" parent="." instance=ExtResource("1_2")]
+[node name="BlueShip" parent="." node_paths=PackedStringArray("ShipAIController2D") instance=ExtResource("1_2")]
 position = Vector2(394, 774)
 ProjectileScene = ExtResource("1_4")
+ShipAIController2D = NodePath("ShipAIController2D")
 Team = 2
 
 [node name="RedTarget" parent="." instance=ExtResource("1_3")]

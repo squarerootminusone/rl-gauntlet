@@ -12,10 +12,10 @@ public partial class Ship : TargetableCharacter, IVisible
 	[Export] public float LaserRange { get; set; } = 300.0f; // Maximum laser range
 	[Export] public float MiningRate { get; set; } = 1.0f; // Crystals per second
 	[Export] public float VisibilityRange { get; set; } = 500.0f; // Fog of war visibility rang
-	[Export] public Node3D AIController { get; set; }
+	[Export] public Node2D ShipAIController2D { get; set; }
 	
 	public bool IsControlled { get; set; } = false;
-	public int Crystals { get; set; } = 0; // Changed to set to allow modification
+	public float Crystals { get; set; } = 0.0f; // Changed to set to allow modification
 	public const int MaxCrystals = 5;
 	
 	private float _timeSinceLastShot = 0.0f;
@@ -118,7 +118,7 @@ public partial class Ship : TargetableCharacter, IVisible
 		// Handle laser mining (only for controlled ship)
 		if ((IsControlled && Input.IsKeyPressed(Key.L)) || _requestMine)
 		{
-			UpdateLaser();
+			UpdateLaser((float)delta);
 			// Update continuous mining time if hitting the same target
 			if (_currentMiningTarget != null && _currentMiningTarget == _lastMiningTarget)
 			{
@@ -146,6 +146,10 @@ public partial class Ship : TargetableCharacter, IVisible
 	{
 		_targetPosition = targetPos;
 	}
+
+	public void SetRequestMine(bool requestMine) {
+		_requestMine = requestMine;
+	}
 	
 	private void Shoot()
 	{
@@ -168,7 +172,7 @@ public partial class Ship : TargetableCharacter, IVisible
 		projectile.Rotation = Rotation; // Rotate projectile to match ship's rotation
 	}
 	
-	private void UpdateLaser()
+	private void UpdateLaser(float delta)
 	{
 		if (_laserBeam == null)
 			return;
@@ -226,40 +230,33 @@ public partial class Ship : TargetableCharacter, IVisible
 				_lastMiningTarget = _currentMiningTarget;
 			}
 			
-			// Only mine after 1 full second of continuous contact
-			if (_continuousMiningTime >= 1.0f)
+			// Check if crystal still exists
+			if (!IsInstanceValid(hitCrystal))
 			{
-				// Check if crystal still exists (might have been destroyed)
+				_currentMiningTarget = null;
+				_lastMiningTarget = null;
+				_continuousMiningTime = 0.0f;
+			}
+			else
+			{
+				// Add mined crystals directly every frame
+				float crystalsMined = MiningRate * delta;
+				Crystals = Mathf.Min(Crystals + crystalsMined, MaxCrystals);
+				
+				// Add partial crystals to team
+				if (Main.Instance != null)
+				{
+					Main.Instance.AddCrystalsToTeam(Team, crystalsMined);
+				}
+
+				// Update RL reward proportional to crystals mined
+				GD.Print("Adding rewards", 10.0 * crystalsMined);
+				double currentReward = (double)ShipAIController2D.Get("reward");
+				ShipAIController2D.Set("reward", currentReward + 10.0 * crystalsMined);
+				
+				// Check if crystal was depleted
 				if (!IsInstanceValid(hitCrystal))
 				{
-					_currentMiningTarget = null;
-					_lastMiningTarget = null;
-					_continuousMiningTime = 0.0f;
-				}
-				else if (hitCrystal.MineCrystal())
-				{
-					// Update RL reward
-					double currentReward = (double)AIController.Get("reward");
-					AIController.Set("reward", currentReward + 10);
-
-					Crystals++;
-					if (Main.Instance != null)
-					{
-						Main.Instance.AddCrystalsToTeam(Team, 1);
-					}
-					_continuousMiningTime = 0.0f; // Reset timer after mining
-					
-					// Check if crystal was depleted and removed
-					if (!IsInstanceValid(hitCrystal))
-					{
-						_currentMiningTarget = null;
-						_lastMiningTarget = null;
-						_continuousMiningTime = 0.0f;
-					}
-				}
-				else
-				{
-					// Crystal depleted
 					_currentMiningTarget = null;
 					_lastMiningTarget = null;
 					_continuousMiningTime = 0.0f;
@@ -268,6 +265,8 @@ public partial class Ship : TargetableCharacter, IVisible
 		}
 		else
 		{
+			double currentReward = (double)ShipAIController2D.Get("reward");
+			ShipAIController2D.Set("reward", currentReward - 0.5 * delta);
 			_currentMiningTarget = null;
 			_lastMiningTarget = null;
 			_continuousMiningTime = 0.0f;
@@ -315,12 +314,12 @@ public partial class Ship : TargetableCharacter, IVisible
 	{
 		// Called when ship deposits crystals (e.g., at a base)
 		// For now, crystals are automatically added to team when mined
-		Crystals = 0;
+		Crystals = 0.0f;
 	}
 	
 	private void CheckForNearbyTargets()
 	{
-		if (Crystals == 0)
+		if (Crystals <= 0.0f)
 			return; // No crystals to deposit
 			
 		const float depositRange = 50.0f;
@@ -339,9 +338,11 @@ public partial class Ship : TargetableCharacter, IVisible
 			if (distance <= depositRange)
 			{
 				// Transfer all crystals to target
-				int crystalsToTransfer = Crystals;
-				target.AddCrystals(crystalsToTransfer);
-				Crystals = 0;
+				if (Crystals > 0.0f)
+				{
+					target.AddCrystals(Crystals);
+					Crystals = 0.0f;
+				}
 				return; // Stop searching after depositing
 			}
 		}
@@ -349,7 +350,7 @@ public partial class Ship : TargetableCharacter, IVisible
 		// Recursively check children
 		foreach (var child in node.GetChildren())
 		{
-			if (Crystals == 0)
+			if (Crystals <= 0.0f)
 				return; // Already deposited, stop searching
 			FindNearbyTargetsRecursive(child, depositRange);
 		}

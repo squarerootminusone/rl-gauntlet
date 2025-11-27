@@ -13,7 +13,7 @@ public enum TeamType
 public class TeamData
 {
 	public TeamType TeamType { get; }
-	public int Crystals { get; set; } = 0;
+	public float Crystals { get; set; } = 0.0f;
 	public List<Node2D> VisibleEntities { get; } = new List<Node2D>();
 	
 	public TeamData(TeamType teamType)
@@ -21,7 +21,7 @@ public class TeamData
 		TeamType = teamType;
 	}
 	
-	public void AddCrystals(int amount)
+	public void AddCrystals(float amount)
 	{
 		Crystals += amount;
 	}

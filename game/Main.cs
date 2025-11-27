@@ -351,7 +351,7 @@ public partial class Main : Node2D
 		}
 	}
 	
-	public void AddCrystalsToTeam(TeamType team, int amount)
+	public void AddCrystalsToTeam(TeamType team, float amount)
 	{
 		if (team == TeamType.Spectator)
 			return;
@@ -445,7 +445,7 @@ public partial class Main : Node2D
 			{
 				infoText = $"Ship ({ship.Team})\n";
 				infoText += $"HP: {ship.CurrentHP}/{ship.MaxHP}\n";
-				infoText += $"Crystals: {ship.Crystals}/{Ship.MaxCrystals}";
+				infoText += $"Crystals: {ship.Crystals:F2}/{Ship.MaxCrystals}";
 			}
 			else if (selectedEntity is Turret turret)
 			{
@@ -456,7 +456,7 @@ public partial class Main : Node2D
 			{
 				infoText = $"Target ({target.Team})\n";
 				infoText += $"HP: {target.CurrentHP}/{target.MaxHP}\n";
-				infoText += $"Crystals: {target.Crystals}/{target.MaxCrystals}";
+				infoText += $"Crystals: {target.Crystals:F2}/{target.MaxCrystals:F2}";
 			}
 			
 			_entityInfoLabel.Text = infoText;
@@ -502,7 +502,7 @@ public partial class Main : Node2D
 				
 			var label = kvp.Value;
 			var teamData = GetTeamData(team);
-			label.Text = $"{team}: {teamData.Crystals} crystals";
+			label.Text = $"{team}: {teamData.Crystals:F2} crystals";
 		}
 	}
 	

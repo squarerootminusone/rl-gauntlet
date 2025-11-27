@@ -8,12 +8,12 @@ public partial class Target : Area2D, IVisible
 	[Export] public float Size { get; set; } = 50.0f;
 	[Export] public int MaxHP { get; set; } = 1;
 	[Export] public float VisibilityRange { get; set; } = 250.0f; // Fog of war visibility range
-	[Export] public int MaxCrystals { get; set; } = 20;
+	[Export] public float MaxCrystals { get; set; } = 20.0f;
 	
 	private int _currentHP;
-	private int _crystals = 0;
+	private float _crystals = 0.0f;
 	
-	public int Crystals => _crystals;
+	public float Crystals => _crystals;
 	public bool IsSelected { get; set; } = false;
 	public int CurrentHP => _currentHP;
 	
@@ -75,7 +75,7 @@ public partial class Target : Area2D, IVisible
 		QueueFree();
 	}
 	
-	public bool AddCrystals(int amount)
+	public bool AddCrystals(float amount)
 	{
 		// Crystals are already counted in team total when mined, so we don't add them again here
 		if (_crystals + amount <= MaxCrystals)
@@ -86,8 +86,8 @@ public partial class Target : Area2D, IVisible
 		else
 		{
 			// Add as many as possible
-			int spaceAvailable = MaxCrystals - _crystals;
-			if (spaceAvailable > 0)
+			float spaceAvailable = MaxCrystals - _crystals;
+			if (spaceAvailable > 0.0f)
 			{
 				_crystals = MaxCrystals;
 				return false; // Indicates partial transfer (some crystals couldn't fit)
