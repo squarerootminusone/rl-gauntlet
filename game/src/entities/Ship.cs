@@ -14,6 +14,8 @@ public partial class Ship : TargetableCharacter, IVisible
 	[Export] public float VisibilityRange { get; set; } = 500.0f; // Fog of war visibility rang
 	[Export] public Node2D ShipAIController2D { get; set; }
 	
+	public GameSceneManager GameSceneManager { get; set; }
+	
 	public bool IsControlled { get; set; } = false;
 	public float Crystals { get; set; } = 0.0f; // Changed to set to allow modification
 	public const int MaxCrystals = 5;
@@ -244,9 +246,9 @@ public partial class Ship : TargetableCharacter, IVisible
 				Crystals = Mathf.Min(Crystals + crystalsMined, MaxCrystals);
 				
 				// Add partial crystals to team
-				if (Main.Instance != null)
+				if (GameSceneManager.Instance != null)
 				{
-					Main.Instance.AddCrystalsToTeam(Team, crystalsMined);
+					GameSceneManager.Instance.AddCrystalsToTeam(Team, crystalsMined);
 				}
 
 				// Update RL reward proportional to crystals mined

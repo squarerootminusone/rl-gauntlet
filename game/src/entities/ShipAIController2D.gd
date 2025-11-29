@@ -3,6 +3,7 @@ class_name ShipAIController2D
 
 @export var ship: Node2D
 
+# Access GameSceneManager from ship (ship.GameSceneManager is set during initialization)
 func get_obs() -> Dictionary:
 	return {"obs":[
 		ship.global_position.x,

@@ -45,9 +45,9 @@ public partial class Target : Area2D, IVisible
 			if (projectile.Team != Team)
 			{
 				// Spawn explosion at hit position
-				if (Main.Instance != null)
+				if (GameSceneManager.Instance != null)
 				{
-					Main.Instance.SpawnExplosion(projectile.GlobalPosition);
+					GameSceneManager.Instance.SpawnExplosion(projectile.GlobalPosition);
 				}
 				
 				TakeDamage(1);

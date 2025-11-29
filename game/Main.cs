@@ -13,17 +13,9 @@ public partial class Main : Node2D
 	
 	public static Main Instance { get; private set; }
 	
-	private Ship _currentShip;
-	private Camera2D _camera;
-	private List<Ship> _ships = [];
-	private int _selectedShipIndex = 0;
-	[Export] public float CameraSpeed { get; set; } = 300.0f;
-	[Export] public float ZoomSpeed { get; set; } = 0.1f;
-	[Export] public float MinZoom { get; set; } = 0.5f;
-	[Export] public float MaxZoom { get; set; } = 3.0f;
+	private GameSceneManager _gameManager;
 	
-	// Team data tracking
-	private Dictionary<TeamType, TeamData> _teams = [];
+	// UI
 	private CanvasLayer _uiLayer;
 	private Control _uiContainer;
 	private Dictionary<TeamType, Label> _crystalLabels = [];
@@ -32,300 +24,34 @@ public partial class Main : Node2D
 	private Control _entityInfoPanel;
 	private Label _entityInfoLabel;
 	
-	// Fog of war
-	private static readonly Color GrayColor = new(0.3f, 0.3f, 0.3f, 1.0f); // Gray color for fog of war
-	private ColorRect _fogOfWarBackground;
-	private CanvasLayer _fogOfWarLayer;
-	private List<CircleShape2D> _visibilityCircles = [];
-	private List<Node2D> _visibilityCircleNodes = [];
-	
-	public Dictionary<TeamType, TeamData> Teams => _teams;
-	
-	public TeamData GetTeamData(TeamType team)
-	{
-		if (!_teams.ContainsKey(team))
-		{
-			_teams[team] = new TeamData(team);
-		}
-		return _teams[team];
-	}
+	public GameSceneManager GameManager => _gameManager;
 
 	public override void _Ready()
 	{
 		Instance = this;
 		
-		// Initialize team data
-		_teams[TeamType.Red] = new TeamData(TeamType.Red);
-		_teams[TeamType.Blue] = new TeamData(TeamType.Blue);
-
-		// Create camera
-		_camera = new Camera2D();
-		AddChild(_camera);
-		
-		// Create fog of war background
-		SetupFogOfWar();
+		// Create GameSceneManager
+		_gameManager = new GameSceneManager();
+		_gameManager.ExplosionScene = ExplosionScene;
+		AddChild(_gameManager);
 		
 		// Create UI for crystal display
 		SetupUI();
 		
-		// Collect ships from scene
-		CollectShips();
-		
 		// Ensure ProjectileScene is set on all ships and turrets from scene
 		SetupSceneEntities();
-		
-		// Select first ship by default
-		if (_ships.Count > 0)
-		{
-			SelectShip(0);
-		}
-		
-		// Initialize fog of war - set all entities to gray initially
-		UpdateFogOfWar();
-	}
-	
-	
-	public override void _Input(InputEvent @event)
-	{
-		if (@event is InputEventMouseButton mouseEvent)
-		{
-			if (_camera != null)
-			{
-				// Handle mouse wheel zoom
-				if (mouseEvent.ButtonIndex == MouseButton.WheelUp)
-				{
-					var currentZoom = _camera.Zoom.X;
-					var newZoom = currentZoom - ZoomSpeed;
-					newZoom = Mathf.Clamp(newZoom, MinZoom, MaxZoom);
-					_camera.Zoom = new Vector2(newZoom, newZoom);
-				}
-				else if (mouseEvent.ButtonIndex == MouseButton.WheelDown)
-				{
-					var currentZoom = _camera.Zoom.X;
-					var newZoom = currentZoom + ZoomSpeed;
-					newZoom = Mathf.Clamp(newZoom, MinZoom, MaxZoom);
-					_camera.Zoom = new Vector2(newZoom, newZoom);
-				}
-				// Handle left-click to select ships
-				else if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.Pressed)
-				{
-					HandleShipSelection();
-				}
-			}
-		}
-	}
-	
-	private void HandleShipSelection()
-	{
-		// Convert screen position to world position
-		var worldPos = GetGlobalMousePosition();
-		
-		// Find the targetable entity closest to the click position (within a reasonable range)
-		const float selectionRange = 50.0f; // Maximum distance to select an entity
-		Node2D closestEntity = null;
-		float closestDistance = float.MaxValue;
-		
-		// Check all targetable entities (ships, turrets, targets)
-		CollectAllTargetables(worldPos, selectionRange, ref closestEntity, ref closestDistance);
-		
-		// Deselect all entities first
-		DeselectAllEntities();
-		
-		// Select the closest entity if found
-		if (closestEntity != null)
-		{
-			SelectEntity(closestEntity);
-		}
-	}
-	
-	private void CollectAllTargetables(Vector2 worldPos, float selectionRange, ref Node2D closestEntity, ref float closestDistance)
-	{
-		// Check ships
-		foreach (var ship in _ships)
-		{
-			if (!IsInstanceValid(ship))
-				continue;
-				
-			var distance = worldPos.DistanceTo(ship.GlobalPosition);
-			if (distance < selectionRange && distance < closestDistance)
-			{
-				closestDistance = distance;
-				closestEntity = ship;
-			}
-		}
-		
-		// Check turrets and targets in the scene
-		CollectTargetablesRecursive(this, worldPos, selectionRange, ref closestEntity, ref closestDistance);
-	}
-	
-	private void CollectTargetablesRecursive(Node node, Vector2 worldPos, float selectionRange, ref Node2D closestEntity, ref float closestDistance)
-	{
-		foreach (var child in node.GetChildren())
-		{
-			if (child is Node2D node2d && IsInstanceValid(node2d))
-			{
-				// Check if it's a targetable entity
-				if (child is Turret || child is Target)
-				{
-					var distance = worldPos.DistanceTo(node2d.GlobalPosition);
-					if (distance < selectionRange && distance < closestDistance)
-					{
-						closestDistance = distance;
-						closestEntity = node2d;
-					}
-				}
-			}
-			
-			// Recursively check children
-			CollectTargetablesRecursive(child, worldPos, selectionRange, ref closestEntity, ref closestDistance);
-		}
-	}
-	
-	private void DeselectAllEntities()
-	{
-		// Deselect current ship
-		if (_currentShip != null && IsInstanceValid(_currentShip))
-		{
-			_currentShip.IsControlled = false;
-			if (_currentShip is TargetableCharacter targetableChar)
-			{
-				targetableChar.IsSelected = false;
-			}
-		}
-		
-		// Deselect all other targetable entities
-		DeselectTargetablesRecursive(this);
-	}
-	
-	private void DeselectTargetablesRecursive(Node node)
-	{
-		foreach (var child in node.GetChildren())
-		{
-			if (child is Targetable targetable)
-			{
-				targetable.IsSelected = false;
-			}
-			else if (child is Target target)
-			{
-				target.IsSelected = false;
-			}
-			
-			DeselectTargetablesRecursive(child);
-		}
-	}
-	
-	private void SelectEntity(Node2D entity)
-	{
-		if (!IsInstanceValid(entity))
-			return;
-			
-		// Handle ship selection
-		if (entity is Ship ship)
-		{
-			int index = _ships.IndexOf(ship);
-			if (index >= 0)
-			{
-				SelectShip(index);
-			}
-		}
-		// Handle turret selection
-		else if (entity is Turret turret)
-		{
-			turret.IsSelected = true;
-			// Center camera on turret
-			if (_camera != null)
-			{
-				_camera.GlobalPosition = turret.GlobalPosition;
-			}
-		}
-		// Handle target selection
-		else if (entity is Target target)
-		{
-			target.IsSelected = true;
-			// Center camera on target
-			if (_camera != null)
-			{
-				_camera.GlobalPosition = target.GlobalPosition;
-			}
-		}
-	}
-	
-	private void SelectShip(int index)
-	{
-		if (index < 0 || index >= _ships.Count)
-			return;
-		
-		var ship = _ships[index];
-		
-		// Check if ship is still valid
-		if (!IsInstanceValid(ship))
-		{
-			CleanupDestroyedShips();
-			return;
-		}
-			
-		// Deselect current ship
-		if (_currentShip != null && IsInstanceValid(_currentShip))
-		{
-			_currentShip.IsControlled = false;
-		}
-		
-		// Select new ship
-		_selectedShipIndex = index;
-		_currentShip = ship;
-		_currentShip.IsControlled = true;
-		if (_currentShip is TargetableCharacter targetableChar)
-		{
-			targetableChar.IsSelected = true;
-		}
-		
-		// Center camera on new ship
-		if (_camera != null && IsInstanceValid(_currentShip))
-		{
-			_camera.GlobalPosition = _currentShip.GlobalPosition;
-		}
-	}
-	
-	private void CleanupDestroyedShips()
-	{
-		// Remove destroyed ships from the list
-		for (int i = _ships.Count - 1; i >= 0; i--)
-		{
-			if (!IsInstanceValid(_ships[i]))
-			{
-				// If the destroyed ship was the current ship, clear it
-				if (_currentShip == _ships[i])
-				{
-					_currentShip = null;
-				}
-				_ships.RemoveAt(i);
-			}
-		}
-		
-		// If current ship is invalid, try to select the first available ship
-		if ((_currentShip == null || !IsInstanceValid(_currentShip)) && _ships.Count > 0)
-		{
-			SelectShip(0);
-		}
-	}
-	
-	private void CollectShips()
-	{
-		// Find all Ship nodes in the scene tree
-		foreach (var child in GetChildren())
-		{
-			if (child is Ship ship)
-			{
-				_ships.Add(ship);
-			}
-		}
 	}
 	
 	private void SetupSceneEntities()
 	{
 		// Ensure ProjectileScene is set on all ships and turrets
 		// (in case they weren't set in the scene file)
-		foreach (var child in GetChildren())
+		SetupSceneEntitiesRecursive(this);
+	}
+	
+	private void SetupSceneEntitiesRecursive(Node node)
+	{
+		foreach (var child in node.GetChildren())
 		{
 			if (child is Ship ship && ship.ProjectileScene == null)
 			{
@@ -335,30 +61,29 @@ public partial class Main : Node2D
 			{
 				turret.ProjectileScene = ProjectileScene;
 			}
-		}
-	}
-	
-	public void SpawnExplosion(Vector2 position)
-	{
-		if (ExplosionScene == null)
-			return;
 			
-		var explosion = ExplosionScene.Instantiate<Explosion>();
-		if (explosion != null)
-		{
-			AddChild(explosion);
-			explosion.GlobalPosition = position;
+			SetupSceneEntitiesRecursive(child);
 		}
 	}
 	
 	public void AddCrystalsToTeam(TeamType team, float amount)
 	{
-		if (team == TeamType.Spectator)
-			return;
-			
-		var teamData = GetTeamData(team);
-		teamData.AddCrystals(amount);
-		UpdateCrystalDisplay();
+		_gameManager.AddCrystalsToTeam(team, amount);
+	}
+	
+	public void UpdateCrystalDisplay()
+	{
+		foreach (var kvp in _crystalLabels)
+		{
+			var team = kvp.Key;
+			// Skip Spectator team
+			if (team == TeamType.Spectator)
+				continue;
+				
+			var label = kvp.Value;
+			var teamData = _gameManager.GetTeamData(team);
+			label.Text = $"{team}: {teamData.Crystals:F2} crystals";
+		}
 	}
 	
 	private void SetupUI()
@@ -424,15 +149,16 @@ public partial class Main : Node2D
 			return;
 
 		// Find selected entity
-		Node2D selectedEntity;
-		if (_currentShip != null && IsInstanceValid(_currentShip) && _currentShip.IsControlled)
+		Node2D selectedEntity = null;
+		var currentShip = _gameManager.PlayableCharactersManager.CurrentShip;
+		if (currentShip != null && IsInstanceValid(currentShip) && currentShip.IsControlled)
 		{
-			selectedEntity = _currentShip;
+			selectedEntity = currentShip;
 		}
 		else
 		{
-			// Check for other selected entities
-			selectedEntity = FindSelectedEntity(this);
+			// Check for other selected entities (turrets, targets)
+			selectedEntity = FindSelectedEntity(_gameManager);
 		}
 		
 		if (selectedEntity != null && IsInstanceValid(selectedEntity))
@@ -491,21 +217,6 @@ public partial class Main : Node2D
 		return null;
 	}
 	
-	private void UpdateCrystalDisplay()
-	{
-		foreach (var kvp in _crystalLabels)
-		{
-			var team = kvp.Key;
-			// Skip Spectator team
-			if (team == TeamType.Spectator)
-				continue;
-				
-			var label = kvp.Value;
-			var teamData = GetTeamData(team);
-			label.Text = $"{team}: {teamData.Crystals:F2} crystals";
-		}
-	}
-	
 	public override void _Process(double delta)
 	{
 		// Update UI position in case viewport size changed
@@ -533,287 +244,5 @@ public partial class Main : Node2D
 		
 		// Update entity info panel
 		UpdateEntityInfoPanel();
-		
-		// Clean up destroyed ships from the list
-		CleanupDestroyedShips();
-		
-		// Handle ship selection with number keys
-		if (Input.IsKeyPressed(Key.Key1) && _ships.Count >= 1)
-			SelectShip(0);
-		else if (Input.IsKeyPressed(Key.Key2) && _ships.Count >= 2)
-			SelectShip(1);
-		else if (Input.IsKeyPressed(Key.Key3) && _ships.Count >= 3)
-			SelectShip(2);
-		else if (Input.IsKeyPressed(Key.Key4) && _ships.Count >= 4)
-			SelectShip(3);
-		
-		// Handle camera movement with WASD
-		if (_camera != null)
-		{
-			var cameraDir = Vector2.Zero;
-			if (Input.IsKeyPressed(Key.W))
-				cameraDir.Y -= 1;
-			if (Input.IsKeyPressed(Key.S))
-				cameraDir.Y += 1;
-			if (Input.IsKeyPressed(Key.A))
-				cameraDir.X -= 1;
-			if (Input.IsKeyPressed(Key.D))
-				cameraDir.X += 1;
-			
-			cameraDir = cameraDir.Normalized();
-			_camera.GlobalPosition += cameraDir * CameraSpeed * (float)delta;
-		}
-		
-		// Handle right-click to set ship target
-		if (Input.IsMouseButtonPressed(MouseButton.Right) && _currentShip != null && IsInstanceValid(_currentShip))
-		{
-			var mousePos = GetGlobalMousePosition();
-			_currentShip.SetTargetPosition(mousePos);
-		}
-		
-		// Update fog of war visibility
-		UpdateFogOfWar();
-	}
-	
-	private void UpdateFogOfWar()
-	{
-		// Update visibility for all teams
-		UpdateTeamVisibility(TeamType.Red);
-		UpdateTeamVisibility(TeamType.Blue);
-		
-		// Determine viewing team: current ship's team, or spectator if no ship controlled
-		TeamType viewingTeam = TeamType.Spectator;
-		if (_currentShip != null && IsInstanceValid(_currentShip))
-		{
-			viewingTeam = _currentShip.Team;
-		}
-		
-		// Update fog of war background size to cover viewport
-		if (_fogOfWarBackground != null)
-		{
-			var viewportSize = GetViewport().GetVisibleRect().Size;
-			_fogOfWarBackground.Size = viewportSize * 10.0f; // Make it large enough to cover everything
-			_fogOfWarBackground.Position = -viewportSize * 5.0f; // Center it
-		}
-		
-		// If viewing as spectator, everything is visible
-		if (viewingTeam == TeamType.Spectator)
-		{
-			SetAllEntitiesVisible(true);
-			if (_fogOfWarBackground != null)
-			{
-				_fogOfWarBackground.Color = Colors.Transparent; // No fog for spectator
-			}
-			var fogDrawer = GetNodeOrNull<FogOfWarDrawer>("FogDrawer");
-			if (fogDrawer != null)
-			{
-				fogDrawer.ClearVisibilityCircles();
-			}
-			return;
-		}
-		
-		// Set background to gray
-		if (_fogOfWarBackground != null)
-		{
-			_fogOfWarBackground.Color = GrayColor;
-		}
-		
-		// Collect all entities that can see (ships, turrets, targets of the viewing team)
-		var visibleEntities = new List<IVisible>();
-		CollectVisibleEntities(visibleEntities, viewingTeam);
-		
-		// Update fog of war drawing
-		var fogDrawer2 = GetNodeOrNull<FogOfWarDrawer>("FogDrawer");
-		if (fogDrawer2 != null)
-		{
-			fogDrawer2.SetVisibilityCircles(visibleEntities);
-		}
-		
-		// Use the pre-computed visible entities for the viewing team
-		var teamData = GetTeamData(viewingTeam);
-		var teamVisibleList = teamData.VisibleEntities;
-		
-		// Collect all entities that can be seen (all ships, turrets, targets, crystals, projectiles)
-		var allEntities = new List<Node2D>();
-		CollectAllEntities(allEntities);
-		
-		// Check visibility for each entity based on viewing team's visible list
-		foreach (var entity in allEntities)
-		{
-			if (!IsInstanceValid(entity))
-				continue;
-				
-			bool isVisible = teamVisibleList.Contains(entity);
-			SetEntityVisibility(entity, isVisible);
-		}
-	}
-	
-	private void UpdateTeamVisibility(TeamType team)
-	{
-		// Skip spectator team
-		if (team == TeamType.Spectator)
-			return;
-			
-		// Collect all entities that can see (ships, turrets, targets of this team)
-		var visibleEntities = new List<IVisible>();
-		CollectVisibleEntities(visibleEntities, team);
-		
-		// Collect all entities that can be seen
-		var allEntities = new List<Node2D>();
-		CollectAllEntities(allEntities);
-		
-		// Get or create team data
-		var teamData = GetTeamData(team);
-		teamData.ClearVisibleEntities();
-		
-		// Build list of visible entities for this team
-		foreach (var entity in allEntities)
-		{
-			if (!IsInstanceValid(entity))
-				continue;
-				
-			bool isVisible = IsEntityVisible(entity, visibleEntities, team);
-			if (isVisible)
-			{
-				teamData.AddVisibleEntity(entity);
-			}
-		}
-	}
-	
-	private void CollectVisibleEntities(List<IVisible> list, TeamType team)
-	{
-		// Collect all ships, turrets, and targets of the specified team
-		foreach (var child in GetChildren()) {
-			if (child is IVisible visible && visible.Team == team)
-				if (IsInstanceValid(child as Node2D))
-					list.Add(visible);
-
-			// Recursively check children (for nested structures)
-			CollectVisibleEntitiesRecursive(child, list, team);
-		}
-	}
-	
-	private static void CollectVisibleEntitiesRecursive(Node node, List<IVisible> list, TeamType team)
-	{
-		foreach (var child in node.GetChildren()) {
-			if (child is IVisible visible && visible.Team == team) 
-				if (IsInstanceValid(child as Node2D)) 
-					list.Add(visible);
-
-			CollectVisibleEntitiesRecursive(child, list, team);
-		}
-	}
-	
-	private void CollectAllEntities(List<Node2D> list)
-	{
-		// Collect all ships, turrets, targets, crystals, and projectiles
-		foreach (var child in GetChildren())
-		{
-			if (child is Node2D node2d)
-				if (node2d is Ship || node2d is Turret || node2d is Target || node2d is Crystal || node2d is Projectile)
-					if (IsInstanceValid(node2d))
-						list.Add(node2d);
-
-			// Recursively check children
-			CollectAllEntitiesRecursive(child, list);
-		}
-	}
-	
-	private static void CollectAllEntitiesRecursive(Node node, List<Node2D> list)
-	{
-		foreach (var child in node.GetChildren())
-		{
-			if (child is Node2D node2d)
-			{
-				if (node2d is Ship || node2d is Turret || node2d is Target || node2d is Crystal || node2d is Projectile)
-				{
-					if (IsInstanceValid(node2d))
-					{
-						list.Add(node2d);
-					}
-				}
-			}
-
-			CollectAllEntitiesRecursive(child, list);
-		}
-	}
-	
-	private static bool IsEntityVisible(Node2D entity, List<IVisible> visibleEntities, TeamType viewingTeam)
-	{
-		// Get the entity's team if it has one
-		TeamType? entityTeam = null;
-		if (entity is Targetable targetable)
-			entityTeam = targetable.Team;
-		else if (entity is TargetableCharacter targetableChar)
-			entityTeam = targetableChar.Team;
-		else if (entity is Target target)
-			entityTeam = target.Team;
-		else if (entity is Projectile projectile)
-			entityTeam = projectile.Team;
-		
-		// Entities of the same team are always visible
-		if (entityTeam.HasValue && entityTeam.Value == viewingTeam)
-			return true;
-		
-		// If no friendly entities can see, nothing is visible
-		if (visibleEntities.Count == 0)
-			return false;
-		
-		// Check if entity is within visibility range of any friendly entity
-		foreach (var visibleEntity in visibleEntities)
-		{
-			if (!IsInstanceValid(visibleEntity as Node2D))
-				continue;
-				
-			var distance = entity.GlobalPosition.DistanceTo(visibleEntity.GlobalPosition);
-			if (distance <= visibleEntity.VisibilityRange)
-			{
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	private static void SetEntityVisibility(Node2D entity, bool isVisible)
-	{
-		if (!IsInstanceValid(entity))
-			return;
-			
-		// Hide entities outside visibility range instead of just graying them
-		entity.Visible = isVisible;
-	}
-	
-	private void SetupFogOfWar()
-	{
-		// Create fog of war layer (behind everything)
-		_fogOfWarLayer = new CanvasLayer {
-			Layer = -1 // Behind everything
-		};
-		AddChild(_fogOfWarLayer);
-
-		// Create background that covers entire viewport
-		_fogOfWarBackground = new ColorRect {
-			Color = GrayColor, // Gray by default
-			MouseFilter = Control.MouseFilterEnum.Ignore // Don't block mouse input
-		};
-		_fogOfWarLayer.AddChild(_fogOfWarBackground);
-		
-		// Create a custom drawing node for visibility circles in world space (as child of Main)
-		var fogDrawer = new FogOfWarDrawer();
-		AddChild(fogDrawer); // Add to Main, not CanvasLayer, so it's in world space
-		fogDrawer.Name = "FogDrawer";
-		fogDrawer.ZIndex = -100; // Behind everything in world space
-		fogDrawer.Visible = true;
-	}
-	
-	private void SetAllEntitiesVisible(bool visible)
-	{
-		var allEntities = new List<Node2D>();
-		CollectAllEntities(allEntities);
-		
-		foreach (var entity in allEntities)
-			if (IsInstanceValid(entity))
-				SetEntityVisibility(entity, visible);
 	}
 }
